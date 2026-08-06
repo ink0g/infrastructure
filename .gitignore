@@ -1,0 +1,9 @@
+# Terraform runtime files
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# Ansible retry files and logs
+*.retry
+*.log
