@@ -7,3 +7,4 @@
 # Ansible retry files and logs
 *.retry
 *.log
+.ansible_cache/
