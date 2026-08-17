@@ -12,4 +12,29 @@
         name:
           - curl
           - docker.io
+          - python3-docker
+    - name: copy app
+      ansible.builtin.copy:
+        src: ../app/
+        dest: /home/ansible/app/
+        owner: ansible
+        group: ansible
+    - name: docker-app
+      community.docker.docker_image:
+        name: go-app-image
+        tag: latest
+        source: build
+        build: 
+          path: /home/ansible/app/
+    - name: dosker-start
+      community.docker.docker_container:
+        name: go-app-container
+        image: go-app-image:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "8080:8080"
+
+        
+      
 
