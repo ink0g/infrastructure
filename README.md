@@ -1,66 +1,61 @@
-### 🌐 Infrastructure as Code: Go App & Monitoring Deployment
+# 🌐 Infrastructure as Code: Go Application & Monitoring Deployment
 
-Проект создавался для обучения и проверки своих знаний. Базовая работа создания, автоматизации и мониторинга серверов. Все развертывается локально. 
+Проект демонстрирует практическое применение методологии IaC и практик CI/CD для развертывания веб-приложения на языке Go с автоматическим подключением мониторинга (Prometheus + Grafana).
 
----
+## 🏗️ Архитектура и компоненты
 
-### 🏗️ Архитектура проекта
+Проект разворачивает две изолированные виртуальные машины:
+1. **Server 1 (App Node):** Хостинг для веб приложения на Golang, упакованного в Docker.
+2. **Server 2 (Monitoring Node):** Сервер мониторинга.
 
-- **Server 1 (App):** Запускается и настраивается GO
-- **Server 2 (Monitoring):** Сбор метрик и отрисовка их. Prometheus + Grafana.
+## 🛠️ Стек технологий
+Terraform, Ansible, Docker, Go, Prometheus, Grafana
 
----
+## 📂 Структура репозитория
 
-### 🛠️ Стек технологий
+```text
+├── terraform/          # Скрипты инициализации инфраструктуры
+│   ├── main.tf         # Описание провайдера и ресурсов VM
+│   ├── cloud_init.cfg  # Первичная настройка пользователей и SSH
+│   └── network_config.cfg
+├── ansible/            # Конфигурация ОС и развертывание сервисов
+│   ├── ansible.cfg     # Глобальные настройки Ansible
+│   ├── hosts.ini       # Инвентарь (IP-адреса управляемых серверов)
+│   ├── playbook.yml    # Главный сценарий развертывания
+│   └── prometheus.yml.j2 # Шаблон конфигурацции Prometheus
+└── app/                # Исходный код приложения
+    ├── Dockerfile      # сборка Go-приложения
+    ├── main.go         # HTTP-сервер на Go
+    ├── go.mod
+    └── go.sum
+```
 
-- **Infrastructure:** Terraform
-- **Configuration Management:** Ansible
-- **Application:** Go (Golang)
-- **Monitoring:** Prometheus + Grafana
+## 🚀 Быстрый запуск
 
----
+### 1. Подготовка окружения
+Перед стартом убедитесь, что у вас установлены `terraform`, `ansible` и утилиты для развертывания виртуальных машин локально.
 
-### 🚀 Быстрый запуск
-
-1. Развертывание инфраструктуры (Terraform)
-
+### 2. Развертывание инфраструктуры (Terraform)
+Перейдите в директорию Terraform, инициализируйте провайдер и примените конфигурацию:
 ```bash
 cd terraform/
 terraform init
 terraform apply -auto-approve
 ```
+*После успешного выполнения Terraform выведет IP-адреса созданных серверов. Может быть надо будет еще раз ввести terraform apply если не выдало ip*
 
-_После успешного выполнения Terraform сгенерирует IP-адреса серверов._
-
-2. Конфигурация серверов (Ansible)
-
-Шаг 1: Скопируйте полученные IP-адреса в файл `ansible/hosts.ini`.  
-Шаг 2: Запустите плейбук:
-
+### 3. Конфигурация и Деплой (Ansible)
+1. Перенесите полученные IP-адреса в файл `ansible/hosts.ini`.
+2. Запустите плейбук
 ```bash
 cd ../ansible/
-ansible-playbook -i inventory.ini site.yml
+ansible-playbook -i hosts.ini playbook.yml
 ```
+
+## 📊 Проверка работы
+* **Приложение:** доступно по адресу `http://<APP_SERVER_IP>:8080`
+* **Метрики Prometheus:** `http://<MONITORING_SERVER_IP>:9090`
+* **Панели Grafana:** `http://<MONITORING_SERVER_IP>:3000` (дефолтный логин/пароль: `admin/admin`)
 
 ---
-
-### 📂 Структура репозитория
-
-```text
-├── terraform/         
-│   ├── .terraform.lock.hcl
-│   ├── cloud_init.cfg
-│   ├── main.tf
-│   └── network_config.cfg    
-├── ansible/            # Скрипты автоматизации и настройки
-│   ├── hosts.ini       # имена и IP адреса серверов
-│   ├── playbook.yml    # Основной файл ансибла
-│	├── ansible.cfg     # Конфиг ансибла
-│   └── prometheus.yml.j2 # Конфиг для prometheus
-├── app/
-│   ├── Dockerfile
-│   ├── go.mod
-│   ├── go.sum
-│   └── main.go
-└── README.md
-```
+*Проект разработан в учебных целях для демонстрации навыков автоматизации инфраструктуры.*
