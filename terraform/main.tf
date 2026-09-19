@@ -28,15 +28,15 @@ resource "libvirt_volume" "ubuntu_base" {
 resource "libvirt_volume" "vm_go_disk" {
   name           = "go_disk.qcow2"
   pool           = "default"
-  base_volume_id = libvirt_volume.ubuntu_base.id 
-  size           = 21474836480 
+  base_volume_id = libvirt_volume.ubuntu_base.id
+  size           = 21474836480
 }
 
 resource "libvirt_volume" "vm_metric_disk" {
   name           = "metrics_disk.qcow2"
   pool           = "default"
-  base_volume_id = libvirt_volume.ubuntu_base.id 
-  size           = 21474836480 
+  base_volume_id = libvirt_volume.ubuntu_base.id
+  size           = 21474836480
 }
 
 # --- 3. РАЗДЕЛЬНЫЕ CLOUD-INIT ДИСКИ (ISO) ---
@@ -80,12 +80,12 @@ resource "libvirt_domain" "go_vm" {
 
   network_interface {
     network_name   = "default"
-    wait_for_lease = true 
+    wait_for_lease = true
   }
 }
 
 resource "libvirt_domain" "metrics_vm" {
-  name   = "metrics_vm" 
+  name   = "metrics_vm"
   memory = "2048"
   vcpu   = 1
 
@@ -97,7 +97,7 @@ resource "libvirt_domain" "metrics_vm" {
 
   network_interface {
     network_name   = "default"
-    wait_for_lease = true 
+    wait_for_lease = true
   }
 }
 
