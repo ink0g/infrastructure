@@ -116,7 +116,6 @@
         mode: '0644'
 
 
-
     - name: Install Grafana
       ansible.builtin.apt:
         deb: /tmp/grafana.deb
@@ -134,6 +133,7 @@
     - name: Add Prometheus datasource
       ansible.builtin.copy:
         dest: /etc/grafana/provisioning/datasources/prometheus.yaml
+        mode: '0644'
         content: |
           apiVersion: 1
 
@@ -160,12 +160,14 @@
       ansible.builtin.file:
         path: /etc/prometheus
         state: directory
+        mode: '0755'
 
 
     - name: Copy Prometheus config
       ansible.builtin.template:
         src: prometheus.yml.j2
         dest: /etc/prometheus/prometheus.yml
+        mode: '0644'
       notify:
         - Restart Prometheus
 
