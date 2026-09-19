@@ -95,6 +95,10 @@ jobs:
           pip install --upgrade pip
           pip install ansible-lint
 
+      # Устанавливаем коллекцию Docker для ansible       
+      - name: Install Ansible Docker Collection
+        run: ansible-galaxy collection install community.docker
+
       # Запускаем проверку
       - name: Run Ansible Lint
         run: ansible-lint ./ansible
