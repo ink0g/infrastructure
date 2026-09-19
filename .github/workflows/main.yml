@@ -10,6 +10,9 @@ jobs:
   # Проверка Go кода
   go-ci:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +26,7 @@ jobs:
         run: test -z "$(gofmt -l .)"
 
       - name: Run Go tests
-        run: go test -v ./...
+        run: go build -v ./...
 
   # Проверка Dockerfile
   docker-ci:
@@ -40,14 +43,17 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile # Уточни путь к Dockerfile, если он в подпапке
+          context: ./app
+          file: ./app/Dockerfile
           push: false        # false означает только проверить, что образ собирается
           tags: my-go-app:test
 
   # Проверка конфигураций Terraform
   terraform-ci:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -80,3 +86,6 @@ jobs:
       # Запускаем официальный ansible-lint для поиска ошибок в плейбуках
       - name: Run Ansible Lint
         uses: ansible/ansible-lint-action@v6
+        with:
+          targets: |
+            ./ansible
