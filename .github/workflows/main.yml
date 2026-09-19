@@ -83,9 +83,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Запускаем официальный ansible-lint для поиска ошибок в плейбуках
-      - name: Run Ansible Lint
-        uses: ansible/ansible-lint-action@v6
+      # Устанавливаем Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          targets: |
-            ./ansible
+          python-version: '3.10'
+
+      # Устанавливаем ansible-lint
+      - name: Install ansible-lint
+        run: |
+          pip install --upgrade pip
+          pip install ansible-lint
+
+      # Запускаем проверку
+      - name: Run Ansible Lint
+        run: ansible-lint ./ansible
