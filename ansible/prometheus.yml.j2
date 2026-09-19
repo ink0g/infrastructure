@@ -15,8 +15,14 @@ scrape_configs:
 {% for host in groups['app_servers'] %}
           - '{{ hostvars[host].ansible_host | default(host) }}:8080'
 {% endfor %}
-
-
+  - job_name: 'server'
+    static_configs:
+      - targets:
+{% for host in groups['app_servers'] %}
+          - '{{ hostvars[host].ansible_host | default(host) }}:9100'
+{% endfor %}
+          - '172.17.0.1:9100'
+      
 
 
 

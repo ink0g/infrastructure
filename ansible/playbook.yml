@@ -57,6 +57,18 @@
         published_ports:
           - "8080:8080"
 
+    - name: Install node_exporter
+      ansible.builtin.apt:
+        name: prometheus-node-exporter
+        state: present
+        update_cache: true
+
+    - name: Enable and start node_exporter
+      ansible.builtin.systemd:
+        name: prometheus-node-exporter
+        enabled: true
+        state: started
+
 
 - name: Configure Monitoring Server
   hosts: monitoring_servers
@@ -146,6 +158,41 @@
       notify:
         - Restart Grafana
 
+    - name: Create dashboard provisioning directory
+      ansible.builtin.file:
+        path: /etc/grafana/provisioning/dashboards
+        state: directory
+        owner: root
+        group: grafana
+        mode: '0755'
+
+    - name: Create directory for JSON dashboard files
+      ansible.builtin.file:
+        path: /var/lib/grafana/dashboards
+        state: directory
+        owner: grafana
+        group: grafana
+        mode: '0755'
+
+    - name: Copy dashboards provider configuration
+      ansible.builtin.copy:
+        src: dashboards_provider.yml
+        dest: /etc/grafana/provisioning/dashboards/provider.yml
+        owner: root
+        group: grafana
+        mode: '0644'
+      notify:
+        - Restart Grafana
+
+    - name: Copy Node Exporter dashboard JSON file
+      ansible.builtin.copy:
+        src: dashboards/node_exporter.json
+        dest: /var/lib/grafana/dashboards/node_exporter.json
+        owner: grafana
+        group: grafana
+        mode: '0644'
+      notify:
+        - Restart Grafana
 
     - name: Start Grafana
       ansible.builtin.systemd:
@@ -155,6 +202,17 @@
 
 
     # Prometheus
+    - name: Install node_exporter
+      ansible.builtin.apt:
+        name: prometheus-node-exporter
+        state: present
+        update_cache: true
+
+    - name: Enable and start node_exporter
+      ansible.builtin.systemd:
+        name: prometheus-node-exporter
+        enabled: true
+        state: started
 
     - name: Create Prometheus directory
       ansible.builtin.file:
