@@ -1,0 +1,82 @@
+name: Infrastructure and Code CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Проверка Go кода
+  go-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Check Go format
+        run: test -z "$(gofmt -l .)"
+
+      - name: Run Go tests
+        run: go test -v ./...
+
+  # Проверка Dockerfile
+  docker-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Настраиваем сборщик (Docker Buildx)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Тестируем сборку контейнера (но не пушим в реестр на каждый пуш)
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile # Уточни путь к Dockerfile, если он в подпапке
+          push: false        # false означает только проверить, что образ собирается
+          tags: my-go-app:test
+
+  # Проверка конфигураций Terraform
+  terraform-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Устанавливаем официальный CLI Terraform в GitHub Actions
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      # Проверяем правильность форматирования кода (аналог gofmt)
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      # Инициализируем плагины (провайдер libvirt/kvm) для проверки синтаксиса
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      # Валидация: проверяет, что все переменные объявлены и код логически верен
+      - name: Terraform Validate
+        run: terraform validate
+
+  # Проверка плейбуков Ansible
+  ansible-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Запускаем официальный ansible-lint для поиска ошибок в плейбуках
+      - name: Run Ansible Lint
+        uses: ansible/ansible-lint-action@v6
