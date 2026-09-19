@@ -43,6 +43,7 @@
     - name: Install Packages
       ansible.builtin.apt:
         name:     
+          - https://dl.grafana.com/grafana/release/13.2.0/grafana_13.2.0_32077357341_linux_amd64.deb
           - prometheus
     - name: copy config for prometheus
       ansible.builtin.template:
@@ -53,4 +54,8 @@
         name: prometheus
         state: restarted
         enabled: yes
-
+    - name: Start Grafana service
+      ansible.builtin.systemd:
+        name: grafana
+        state: started
+        enabled: yes
