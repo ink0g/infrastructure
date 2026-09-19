@@ -21,6 +21,8 @@ Terraform, Ansible, Docker, Go, Prometheus, Grafana
 ├── ansible/            # Конфигурация ОС и развертывание сервисов
 │   ├── ansible.cfg     # Глобальные настройки Ansible
 │   ├── hosts.ini       # Инвентарь (IP-адреса управляемых серверов)
+│   ├── files
+│   │   └── grafana.deb # Так как в России grafana не устанавливается скачать придется самому
 │   ├── playbook.yml    # Главный сценарий развертывания
 │   └── prometheus.yml.j2 # Шаблон конфигурацции Prometheus
 └── app/                # Исходный код приложения

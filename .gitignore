@@ -8,3 +8,4 @@
 *.retry
 *.log
 .ansible_cache/
+grafana.deb

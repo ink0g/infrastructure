@@ -1,63 +1,196 @@
 ---
 - name: Configure App Server
   hosts: app_servers
+  gather_facts: true
   become: true
 
   tasks:
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true
-    - name: Install Packages
+        cache_valid_time: 3600
+
+    - name: Install required packages
       ansible.builtin.apt:
         name:
           - curl
           - docker.io
           - python3-docker
-    - name: Copy app
+        state: present
+
+    - name: Ensure Docker is started and enabled
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create application directory
+      ansible.builtin.file:
+        path: /home/ansible/app
+        state: directory
+        owner: ansible
+        group: ansible
+        mode: '0755'
+
+    - name: Copy application source
       ansible.builtin.copy:
         src: ../app/
         dest: /home/ansible/app/
         owner: ansible
         group: ansible
         mode: '0755'
-    - name: Docker-app
+
+    - name: Build application Docker image
       community.docker.docker_image:
         name: go-app-image
         tag: latest
         source: build
         build:
           path: /home/ansible/app/
-    - name: Dosker-start
+
+    - name: Start application container
       community.docker.docker_container:
         name: go-app-container
         image: go-app-image:latest
         state: started
         restart_policy: always
-        ports:
+        published_ports:
           - "8080:8080"
+
 
 - name: Configure Monitoring Server
   hosts: monitoring_servers
   become: true
+  gather_facts: true
+
+  vars:
+    prometheus_version: "v3.1.0"
 
   tasks:
-    - name: Install Packages
+    - name: Remove old Grafana repository
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/grafana.list
+        state: absent
+
+    - name: Remove old Grafana sources repository
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/grafana.sources
+        state: absent
+
+    # Docker
+
+    - name: Install Docker
       ansible.builtin.apt:
         name:
-          - https://dl.grafana.com/grafana/release/13.2.0/grafana_13.2.0_32077357341_linux_amd64.deb
-          - prometheus
-    - name: Copy config for prometheus
+          - docker.io
+          - python3-docker
+        state: present
+        update_cache: true
+
+
+    - name: Start Docker
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+
+    # Grafana
+
+    - name: Install Grafana dependencies
+      ansible.builtin.apt:
+        name:
+          - adduser
+          - libfontconfig1
+          - musl
+          - wget
+        state: present
+
+
+    - name: Copy Grafana deb package
+      ansible.builtin.copy:
+        src: files/grafana.deb
+        dest: /tmp/grafana.deb
+        owner: root
+        group: root
+        mode: '0644'
+
+
+
+    - name: Install Grafana
+      ansible.builtin.apt:
+        deb: /tmp/grafana.deb
+
+
+    - name: Create datasource directory
+      ansible.builtin.file:
+        path: /etc/grafana/provisioning/datasources
+        state: directory
+        owner: root
+        group: grafana
+        mode: '0755'
+
+
+    - name: Add Prometheus datasource
+      ansible.builtin.copy:
+        dest: /etc/grafana/provisioning/datasources/prometheus.yaml
+        content: |
+          apiVersion: 1
+
+          datasources:
+            - name: Prometheus
+              type: prometheus
+              access: proxy
+              url: http://localhost:9090
+              isDefault: true
+      notify:
+        - Restart Grafana
+
+
+    - name: Start Grafana
+      ansible.builtin.systemd:
+        name: grafana-server
+        state: started
+        enabled: true
+
+
+    # Prometheus
+
+    - name: Create Prometheus directory
+      ansible.builtin.file:
+        path: /etc/prometheus
+        state: directory
+
+
+    - name: Copy Prometheus config
       ansible.builtin.template:
         src: prometheus.yml.j2
         dest: /etc/prometheus/prometheus.yml
-        mode: '0644'
-    - name: Start Prometheus
-      ansible.builtin.systemd:
+      notify:
+        - Restart Prometheus
+
+
+    - name: Start Prometheus container
+      community.docker.docker_container:
         name: prometheus
-        state: restarted
-        enabled: true
-    - name: Start Grafana service
-      ansible.builtin.systemd:
-        name: grafana
+        image: "prom/prometheus:{{ prometheus_version }}"
         state: started
-        enabled: true
+        restart_policy: always
+        published_ports:
+          - "9090:9090"
+        volumes:
+          - /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+
+  handlers:
+
+    - name: Restart Grafana
+      ansible.builtin.systemd:
+        name: grafana-server
+        state: restarted
+
+
+    - name: Restart Prometheus
+      community.docker.docker_container:
+        name: prometheus
+        restart: true
